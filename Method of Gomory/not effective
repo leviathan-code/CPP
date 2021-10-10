@@ -1,0 +1,644 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+int main()
+{
+    setlocale(LC_ALL, "Russian");
+    int n, stl, m, stroka;
+    cout << " введите кол-во ограничений:";
+    cin >> n;
+    n++;
+
+    cout << " введите кол-во переменных:";
+    cin >> m;
+
+    m += 4;//кол-во столбцов с б,сб, А0
+    stl = m - 1;//фиксируем кол-во переменных
+
+    vector< vector<float> > tab(n);
+    vector<int> c(m);// используем для нахождениия строки с отриц А0 ()
+    vector <float> bazisnyh(n);//фиксируем сторку с базисной переменной
+    vector<float> a0(n);//фиксируем А0
+    vector<float> ocen(m);//для фиксации оценок
+    vector<int> IntA0(n);//для проверки  a0
+    vector<float> DrobA0(n);//для хранени дробных А0
+    vector<int> IntA(m);//для проверки a
+
+    // Заполнение нулями, чтобы был инициализирован в любом случае
+
+    for (int i = 0; i < n; i++)
+    {
+        tab[i].resize(m);
+        for (int j = 0; j < m - 1; j++) {
+            tab[i][j] = 0;
+            bazisnyh[i] = 0;
+        }
+    }
+
+    bool r = 0;//флаг для А0<0
+    cout << "F(X)= ";
+
+    for (int j = 3; j < m - 1; j++) {
+        cin >> tab[0][j];
+    }
+
+    for (int i = 1; i < n; i++)
+    {
+        cout << "Ведите значения " << i << " неравенства" << endl;
+        for (int j = 3; j < m; j++) {
+            if (j != m - 1) {
+                cout << "x" << "(" << j - 2 << ")";
+                cin >> tab[i][j];
+            }
+
+            if (j == m - 1) {
+                cout << "<=";
+                cin >> tab[i][2];
+                if (tab[i][2] < 0) {
+                    c[i] = i;//фиксруем строку с отриц А0
+                    r = 1;//флаг для А0<0
+                }
+            }
+        }
+    }
+    //вывод введенных значений
+
+    cout << "введенные значения:" << endl;
+
+    cout << "F(X)= ";
+    for (int j = 3; j < m; j++) {
+        cout << tab[0][j] << "  ";
+    }
+
+    cout << endl;
+
+    for (int i = 1; i < n; i++) {
+        cout << "      ";
+        for (int j = 3; j < m; j++) {
+
+            if (j == m - 1)
+                cout << "= " << tab[i][2];
+
+            if (j != m - 1) {
+                cout << tab[i][j] << "  ";
+            }
+
+        }
+        cout << endl;
+    }
+    cout << endl;
+
+    if (r) {
+        for (int i = 1; i < n; i++) {// если свободные члены < 0
+            for (int j = 2; j < m; j++) {
+
+                if (i == c[i]) {
+                    tab[i][j] *= -1;
+                }
+            }
+        }
+    }
+
+    m = m - 1;
+    int  bazis = 0, one = 0, zero = 0, str = -1;
+
+    //находим базисные переменные в ограничения, smotrim po strokam
+    for (int j = 3; j < m; j++) {
+        for (int i = 1; i < n; i++) {
+
+            if ((tab[i][j] != 0)) {
+                if ((tab[i][j] == 1)) {
+                    one++;
+                    str = i;//ключевая строка
+                }
+
+                else {
+                    one = 0;
+                }
+            }
+
+            else if (tab[i][j] == 0) {
+                zero++;
+            }
+        }
+
+        if ((one == 1) && (zero == n - 2)) {//нашел базис
+            bazis++;//кол-во базисных переменных
+            bazisnyh[str] = str;//для хранеия строк с базисными элементами
+            c[j] = j;//хранение столбов с базисными переными  
+            tab[str][0] = c[j];//заполнение б
+            tab[str][1] = tab[0][c[j]];//заполнение сб
+        }
+
+        one = 0;
+        zero = 0;
+        str = -1;
+    }
+
+    tab.resize(m);
+    //заполнение пустых ячеек:
+    float b = -1;
+    //инициализация
+    for (int i = n - 1; i <= n; i++)
+    {
+        tab[i].resize(m);
+        for (int j = 0; j < m; j++) {
+            if ((i == 0) && (bazis != 0)) {
+                tab[i][j] = b;
+            }
+        }
+    }
+    cout << endl;
+    //вывод
+    cout << "cj" << " ";
+    for (int j = 3; j < m; j++) {
+
+        cout << tab[0][j] << "  ";
+    }
+    cout << endl;
+    for (int j = 0; j < m; j++) {
+        if (j == 0) {
+            cout << "б" << " ";
+            continue;
+
+        }
+        if (j == 1) {
+            cout << "cб" << " ";
+
+            continue;
+        }
+        cout << "a" << j - 2 << " ";
+    }
+    cout << endl;
+
+    for (int i = 1; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+
+
+            if (j == 0) {
+                cout << tab[i][j] - 2 << "  ";
+                continue;
+            }
+            else if (j == 1)
+            {
+                cout << tab[i][j] << "  ";
+                continue;
+            }
+
+            else   if (j == 2) {
+                cout << tab[i][j] << "  ";
+                continue;
+            }
+            else
+                cout << tab[i][j] << "  ";
+        }
+        cout << endl;
+    }
+
+    bool OtricOcen = 0;
+    float min = 9999999999999999.0;
+    vector<float> mini(n);//векор дл хранени отриц А0
+
+    float v = 0;
+
+    for (int j = 0; j < n; j++) {//переиниц
+        mini[j] = v;
+    }
+
+    bool reshaem = 1;
+    bool drob = 1;
+    float minDrob = 999;
+    bool drobniy = 0;
+
+    //решаем
+
+    int stolb;
+    for (int j = 2; j < m; j++) {//считаем оценки
+        for (int i = 1; i < n; i++) {
+            tab[n][j] += (tab[i][1] * tab[i][j]);
+        }
+        tab[n][j] -= tab[0][j];
+    }//
+
+    cout << endl << endl;
+
+    //вывод
+    cout << "cj" << " ";
+    for (int j = 3; j < m; j++) {
+        cout << tab[0][j] << "  ";
+        c[j] = zero;//переинициализация
+    }
+    cout << endl;
+    for (int j = 0; j < m; j++) {
+        if (j == 0) {
+            cout << "б" << " ";
+            continue;
+        }
+
+        if (j == 1) {
+            cout << "cб" << " ";
+            continue;
+        }
+
+        cout << "a" << j - 2 << " ";
+    }
+    cout << endl;
+
+    for (int i = 1; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+
+
+            if (j == 0) {
+                cout << tab[i][j] - 2 << "  ";
+                continue;
+            }
+            else if (j == 1)
+            {
+                cout << tab[i][j] << "  ";
+                continue;
+            }
+
+            else   if (j == 2) {
+                cout << tab[i][j] << "  ";
+                continue;
+            }
+            else
+                cout << tab[i][j] << "  ";
+        }
+        cout << endl;
+    }
+    cout << "dj'" << "  ";
+    for (int j = 2; j < m; j++) {
+        cout << tab[n][j] << "  ";
+    }
+    cout << endl;
+    float minn;
+    minn = 999999999999999999;
+
+    for (int j = 2; j < m; j++) {//ищем мин оценку
+        if (tab[n][j] < 0) {
+            OtricOcen = 1;
+            if (minn > tab[n][j]) {
+                minn = tab[n][j];
+                stolb = j;//ключевй столбец
+            }
+        }
+
+    }
+    for (int j = 2; j < m; j++) {//обнуляем оценки
+        tab[n][j] = 0;
+    }
+
+    float Zero = 0;
+
+    while (OtricOcen || drobniy) {//решает пока есть оценки<0 и дробные А0
+        drobniy = 0;
+        min = 9999999999999.0;
+        if ((drobniy == 0) || (OtricOcen)) {
+            for (int i = 1; i < n; i++) {// 
+
+                if ((tab[i][stolb] + 0.0) > 0) {
+                    mini[i] = ((tab[i][2] + 0.0) / (tab[i][stolb] + 0.0));//мин отношения к А0
+                }
+            }
+
+            for (int i = 1; i < n; i++) {// ключевой элемент
+                if ((mini[i] < min) && ((mini[i]) + 0.0) > 0) {
+                    min = mini[i];//мин отношение к А0
+                    stroka = i;//ключевая строка
+                }
+            }
+        }
+
+        bazisnyh[stroka] = stroka;
+        min = tab[stroka][stolb];//фиксируем ключ элемент
+
+         //симплекс метод
+        for (int i = 1; i < n; i++) {// 
+            for (int j = 2; j < m; j++) {
+                if (j != stolb) {
+                    if ((i != stroka)) {
+                        tab[i][j] -= ((tab[stroka][j] * tab[i][stolb]) + 0.0) / min;
+                    }
+                }
+            }
+        }
+
+        for (int j = 2; j < m; j++) {
+            tab[stroka][j] = (tab[stroka][j] + 0.0) / min;
+        }
+
+        tab[stroka][stolb] = 1;
+
+        for (int i = 1; i < n; i++) {// 
+            if (stroka != i) {
+                tab[i][stolb] = 0;
+            }
+        }
+        //
+
+//находим базисные переменные в ограничения, smotrim po strokam
+        for (int j = 3; j < m; j++) {
+            for (int i = 1; i < n; i++) {
+
+                if ((tab[i][j] != 0)) {
+                    if ((tab[i][j] == 1)) {
+                        one++;
+                        str = i;//ключевая строка
+                    }
+
+                    else {
+                        one = 0;
+                    }
+                }
+
+                else if (tab[i][j] == 0) {
+                    zero++;
+                }
+            }
+
+            if ((one == 1) && (zero == n - 2)) {//нашел базис
+                bazis++;//кол-во базисных переменных
+                bazisnyh[str] = str;//для хранеия строк с базисными элементами
+                c[j] = j;//хранение столбов с базисными переными  
+                tab[str][0] = c[j];//заполнение б
+                tab[str][1] = tab[0][c[j]];//заполнение сб
+            }
+
+            one = 0;
+            zero = 0;
+            str = -1;
+        }
+
+
+        for (int j = 2; j < m; j++) {
+            for (int i = 1; i < n; i++) {// 
+                tab[n][j] += (tab[i][1] * tab[i][j]);
+            }
+            tab[n][j] -= tab[0][j];
+        }
+        cout << endl;
+        //вывод
+        cout << "cj" << " ";
+        for (int j = 3; j < m; j++) {
+
+            cout << tab[0][j] << "  ";
+        }
+
+        cout << endl;
+        for (int j = 0; j < m; j++) {
+            if (j == 0) {
+                cout << "б" << " ";
+                continue;
+            }
+            if (j == 1) {
+                cout << "cб" << " ";
+                continue;
+            }
+
+            cout << "a" << j - 2 << " ";
+        }
+        cout << endl;
+
+        for (int i = 1; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                mini[i] = 0;//переинициализация
+                if (j == 0) {
+                    cout << tab[i][j] - 2 << "  ";
+                    continue;
+                }
+                else if (j == 1)
+                {
+                    cout << tab[i][j] << "  ";
+                    continue;
+                }
+
+                else   if (j == 2) {
+                    cout << tab[i][j] << "  ";
+                    continue;
+                }
+                else
+                    cout << tab[i][j] << "  ";
+            }
+            cout << endl;
+        }
+
+        cout << "dj'" << "  ";
+        for (int j = 2; j < m; j++) {
+            cout << tab[n][j] << "  ";
+        }
+        cout << endl;
+        OtricOcen = 0;
+        minn = 999999999999999999;
+        min = 9999999999999999;
+
+        for (int j = 2; j < m; j++) {//min оценка
+            if (tab[n][j] < 0) {
+                OtricOcen = 1;
+                if (minn > tab[n][j]) {
+                    minn = tab[n][j];
+                    stolb = j;//ключевой стобец
+                }
+            }
+        }
+
+        if (OtricOcen || drobniy) {//обнуляем dj 
+            for (int j = 2; j < m; j++) {
+                tab[n][j] = Zero;
+                c[j] = zero;//переинициализация
+            }
+        }
+
+        if ((OtricOcen == 0 || drobniy)) {
+            bool drob = 1;
+            int k = 0;
+            drob = 0;
+            drobniy = 0;
+            for (int i = 1; i < n; i++) {//поиск дробных А0
+                IntA0[i] = tab[i][2];
+                if (tab[i][2] - (IntA0[i] + 0.0) > 0) {
+                    DrobA0[i] = tab[i][2] - (IntA0[i] + 0.0);
+                    drob = 1;
+                    drobniy = 1;
+                }
+            }
+            if (drob) {
+                float max = 0;
+                //добавляем новый столбец и строку
+                n++;
+                m++;
+                //
+
+                ///увеличеие векторов
+                tab.resize(m);
+                bazisnyh.resize(m);
+                a0.resize(m);
+                c.resize(m);
+                IntA0.resize(n);
+                DrobA0.resize(n);
+                mini.resize(n);
+                IntA.resize(m);
+
+                float a = 0;
+                int p = -1;
+                float b = 0;
+
+                for (int i = 0; i <= n + 1; i++)
+                {
+                    tab[i].resize(m);
+                    for (int j = stl; j < m - 1; j++) {
+                        tab[i][j] = a;
+                        c[j] = p;
+                    }
+                }
+                ///
+
+                
+
+                for (int i = 1; i < n; i++) {//ищем строку А0 с наибольшим дробным
+                    if (DrobA0[i] > max) {
+                        max = DrobA0[i];
+                        stroka = i;//фикируем ключевую строку
+                    }
+                    else
+                        DrobA0[i] = 0;
+                }
+                
+                for (int j = 2; j < m; j++) {//смещаем строку с оцеками вниз на одну
+                    tab[n][j] = tab[n - 1][j];
+                }
+                    ///заполняем сб,б и ставим 1 на пересечениии базиснонго столбца и строки
+                    tab[n - 1][1] = 0;
+                    tab[n - 1][0] = m - 1;
+                    tab[n - 1][m - 1] = 1;
+                    ///
+                
+
+                for (int j = 2; j < m; j++) {
+                    IntA[j] = tab[stroka][j];//сохраняем значения ключ строки в int вектор для хранени целой части
+                }
+
+                for (int j = 2; j < m; j++) {
+                    if (tab[stroka][j] > 0) {
+                        tab[n - 1][j] = (IntA[j] + 0.0) - tab[stroka][j];//заполняем новую строку элементами по формуле
+                        if ((min > tab[n - 1][j]) && (tab[n - 1][j] < 0)) {
+                            minDrob = tab[n - 1][j];//нахоим мин дробный элемент
+                            drobniy = 1;
+                            stolb = j;
+                        }
+                    }
+                    else {
+                        tab[n - 1][j] = (IntA[j] + 0.0) - tab[stroka][j];
+                        if ((min > tab[n - 1][j]) && (tab[n - 1][j] < 0)) {
+                            minDrob = tab[n - 1][j];
+                            drobniy = 1;
+                            stolb = j;
+                        }
+                    }
+                }
+            }
+            for (int j = 2; j < m; j++) {
+                tab[n][j] = Zero;
+            }
+        }
+        for (int j = 2; j < m; j++) {
+            tab[n][j] = Zero;
+        }
+    }
+
+
+    m = stl;//убираем лишние столбцы
+    cout << endl;
+    for (int j = 2; j < m; j++) {//считаем оцеки
+        for (int i = 1; i < n; i++) {// 
+            tab[n][j] += (tab[i][1] * tab[i][j]);
+        }
+        tab[n][j] -= tab[0][j];
+    }
+    cout << endl;
+
+    //вывод
+    cout << "Оптимальный план:" << endl;
+
+    cout << "cj     " << " ";
+    for (int j = 3; j < m; j++) {
+        cout << tab[0][j] << "  ";
+    }
+
+    cout << endl;
+    for (int j = 0; j < m; j++) {
+        if (j == 0) {
+            cout << "б" << " ";
+            continue;
+        }
+        if (j == 1) {
+            cout << "cб" << " ";
+            continue;
+        }
+
+        cout << "a" << j - 2 << " ";
+    }
+    cout << endl;
+
+    for (int i = 1; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            if (j == 0) {
+                cout << tab[i][j] - 2 << "  ";
+                continue;
+            }
+            else if (j == 1)
+            {
+                cout << tab[i][j] << "  ";
+                continue;
+            }
+
+            else   if (j == 2) {
+                cout << tab[i][j] << "  ";
+                continue;
+            }
+            else
+                cout << tab[i][j] << "  ";
+        }
+        cout << endl;
+    }
+
+    cout << " dj'" << "  ";
+    for (int j = 2; j < m; j++) {
+        cout << tab[n][j] << "  ";
+    }
+
+    vector<float> x(m);//
+
+    float l = tab[n][2];//допустимое решение задачи
+
+    for (int i = 1; i < n; i++) {
+        for (int j = 2; j < m; j++) {
+            if (c[j] == tab[i][0]) {
+                x[j] = tab[i][2];
+            }
+        }
+    }
+
+    cout << endl;
+    cout << "X*( ";//допустимое множество 
+    for (int j = 3; j < m; j++) {
+        if (j == 3)
+            cout << x[j] << " ,";
+        else if (j == m - 1)
+            cout << " " << x[j];
+        else
+            cout << " " << x[j] << " ,";
+    }
+
+
+    cout << " )";
+    cout << endl;
+
+    cout << "L*=" << l;
+    cout << endl;
+    cout << endl;
+    system("pause");
+    return 0;
+}
