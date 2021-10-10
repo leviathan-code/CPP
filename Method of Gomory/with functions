@@ -1,0 +1,330 @@
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <stdio.h>
+
+using namespace std;
+
+struct Add {
+    void add(vector<vector<float>>& tab, int stroka, int stolb) {
+        cout << "F(X)= ";
+        for (int j = 3; j < stolb - 1; j++) //ввод целевой функции, которая станет первой строчкой в таблце(матрице)
+            cin >> tab[0][j];
+
+        for (int i = 1; i < stroka; i++) {
+            cout << "Ведите значения " << i << " неравенства" << endl;
+            for (int j = 3; j < stolb; j++) {
+                if (j != stolb - 1) {
+                    cout << "x" << "(" << j - 2 << ")";
+                    cin >> tab[i][j];
+                }
+                if (j == stolb - 1) {//ввод А0
+                    cout << "<=";
+                    cin >> tab[i][2];
+                }
+            }
+        }
+    }
+    void show(vector<vector<float>>& tab, int stroka, int stolb, bool n) {
+        cout << "cj     " << " ";
+        for (int j = 3; j < stolb; j++)
+            cout << tab[0][j] << "  ";
+        cout << endl;
+        for (int j = 0; j < stolb; j++) {
+            if (j == 0) {
+                cout << "б" << " ";
+                continue;
+            }
+            if (j == 1) {
+                cout << "cб" << " ";
+                continue;
+            }
+            cout << "a" << j - 2 << " ";
+        }
+        cout << endl;
+        for (int i = 1; i < stroka; i++) {
+            for (int j = 0; j < stolb; j++) {
+                if (j == 0) {
+                    cout << tab[i][j] - 2 << "  ";
+                    continue;
+                }
+                else if (j == 1) {
+                    cout << tab[i][j] << "  ";
+                    continue;
+                }
+                else if (j == 2) {
+                    cout << tab[i][j] << "  ";
+                    continue;
+                }
+                else
+                    cout << tab[i][j] << "  ";
+            }
+            cout << endl;
+        }
+        if (n) {
+            cout << "  dj'" << " ";
+            for (int j = 2; j < stolb; j++)
+                cout << tab[stroka][j] << "  ";
+            cout << endl;
+        }
+    }
+};
+
+void FindBazzis(vector<vector<float>>& tab, int& stroka, int& stolb) {
+    int  bazis = 0, one = 0, zero = 0, str = -1;
+    vector<float> bazisnyh(stroka);
+
+    //находим базисные переменные в ограничения, smotrim po strokam
+    for (int j = 3; j < stolb; j++) {
+        for (int i = 1; i < stroka; i++) {
+            if ((tab[i][j] != 0)) {
+                if ((tab[i][j] == 1)) {
+                    one++;
+                    str = i;//ключевая строка
+                }
+                else one = 0;
+            }
+            else if (tab[i][j] == 0) zero++;
+        }
+        if ((one == 1) && (zero == stroka - 2)) {//нашел базис
+            bazis++;//кол-во базисных переменных
+            bazisnyh[str] = str;//для хранеия строк с базисными элементами
+            tab[str][0] = j;//заполнение б
+            tab[str][1] = tab[0][j];//заполнение сб
+        }
+        one = 0, zero = 0, str = -1;
+    }
+}
+
+int FindDrob(vector<vector<float>>& tab, int& stroka, int& stolb) {
+
+    vector<int> IntA0(stroka);
+    vector<float> DrobA0(stroka);
+    bool drob = 0;
+    //поиск дробных А0
+    for (int i = 1; i < stroka; i++) {
+        IntA0[i] = tab[i][2];
+        if (tab[i][2] - (IntA0[i] + 0.0) > 0) {
+            DrobA0[i] = tab[i][2] - (IntA0[i] + 0.0);
+            drob = 1;
+        }
+    }
+    //ищем строку с наибольшим дробным А0
+    int max = -99999999999999999, stroka11=0;
+    for (int i = 1; i < stroka; i++) {
+        if (DrobA0[i] > max) {
+            max = DrobA0[i];
+            stroka11 = i;//фикируем ключевую строку
+        }
+        else DrobA0[i] = 0;
+    }
+    if (drob)
+        return stroka11;//ключевая строка
+    else return 0;
+}
+
+int ReshaemDrob(vector<vector<float>>& tab, int& stroka, int& stolb) {
+
+    float minDrob = 999;
+    int  stolb11;
+    bool drobniy = 0, n = 1;
+
+    vector<float> DrobA(stroka);
+    vector<int> IntA(stolb);
+    vector<float>myvector;
+    float b = 0;
+    tab.resize(stolb);
+    for (int i = 0; i <= stroka; i++) {
+        tab[i].resize(stolb);
+        for (int j = 0; j < stolb; j++) {
+            if(j==stolb-1)
+                myvector.push_back(b);
+            if(i==stroka)
+                myvector.push_back(b);
+        }
+        tab.push_back(myvector);
+    }
+    for (int j = 0; j < stolb; j++) {
+        tab[stroka][j] = tab[stroka-1][j];//смещаем строку с оцеками вниз на одну
+        tab[stroka - 1][j] = 0;
+    }
+    tab[stroka-1][0] = stolb-1;
+    tab[stroka - 1][stolb - 1] = 1;
+    //сохраняем значения ключ строки в int для хранени целой части
+    for (int j = 2; j < stolb; j++) {
+    }
+    for (int j = 2; j < stolb; j++) {
+        IntA[j] = tab[FindDrob(tab, stroka, stolb)][j];//выделяем целую часть
+        tab[stroka - 1][j] = (IntA[j] + 0.0) - tab[FindDrob(tab, stroka, stolb)][j];//заполняем новую строку элементами по формуле
+        if ((minDrob > tab[stroka - 1][j]) && j != 2) {
+            minDrob = tab[stroka - 1][j];//нахоим мин дробный элемент
+            stolb11 = j;
+        }
+    }
+    Add add;
+    add.show(tab, stroka, stolb, n);
+    return stolb11;//ключевой столбец
+}
+
+int simplex(vector<vector<float>>& tab, int& stroka, int& stolb) {
+
+    int stroka11, stolb11;
+    float min = 9999999999999999.0, minDrob = 999, minn = 999999999999999999;
+    bool OtricOcen = 0, n = 1,drob=0;
+
+    //обнуляем оценки
+    for (int j = 2; j < stolb; j++)
+        tab[stroka][j] = 0;
+    //считаем оценки
+    for (int j = 2; j < stolb; j++) {
+        for (int i = 1; i < stroka; i++)
+            tab[stroka][j] += (tab[i][1] * tab[i][j]);
+        if (j != 2)
+            tab[stroka][j] -= tab[0][j];
+    }
+    Add add;
+    add.show(tab, stroka, stolb, n);
+    //ищем мин оценку
+    for (int j = 2; j < stolb; j++) {
+        if (tab[stroka][j] < 0) {
+            OtricOcen = 1;
+            if (minn > tab[stroka][j]) {
+                minn = tab[stroka][j];
+                stolb11 = j;//ключевй столбец
+            }
+        }
+    }
+    vector<float> mini(stroka, 0);
+    vector<float> bazisnyh(stroka, 0);
+
+    if (FindDrob(tab, stroka, stolb))      
+        drob = 1;
+
+    if (OtricOcen || drob) {
+        if (drob == 0) {
+            for (int i = 1; i < stroka; i++) {// 
+                if ((tab[i][stolb11] + 0.0) > 0)
+                    mini[i] = ((tab[i][2] + 0.0) / (tab[i][stolb11] + 0.0));//мин отношения к А0
+            }
+            for (int i = 1; i < stroka; i++) {// ключевой элемент
+                if ((mini[i] < min) && ((mini[i]) + 0.0) > 0) {
+                    min = mini[i];//мин отношение к А0
+                    stroka11 = i;//ключевая строка
+                }
+            }
+        }
+        else {
+            stroka++, stolb++;
+            bazisnyh.push_back(0);
+            stroka11 = stroka - 1;
+            stolb11 = ReshaemDrob(tab, stroka, stolb);
+        }
+        bazisnyh[stroka11] = stroka11;//not ok
+        min = tab[stroka11][stolb11];//фиксируем ключ элемент
+
+        //симплекс метод
+        for (int i = 1; i < stroka; i++) {// 
+            for (int j = 2; j < stolb; j++) {
+                if ((j != stolb11) && (i != stroka11))
+                    tab[i][j] -= ((tab[stroka11][j] * tab[i][stolb11]) + 0.0) / min;
+            }
+        }
+        for (int j = 2; j < stolb; j++)
+            tab[stroka11][j] = (tab[stroka11][j] + 0.0) / min;
+
+        tab[stroka11][stolb11] = 1;
+
+        for (int i = 1; i < stroka; i++)
+            if (i != stroka11)
+                tab[i][stolb11] = 0;
+
+        FindBazzis(tab, stroka, stolb);        
+    }
+    for (int j = 2; j < stolb; j++) {
+        if (tab[stroka][j] < 0) {
+            OtricOcen = 1;
+            break;
+        }
+    }
+    if (OtricOcen || drob) 
+        return simplex(tab, stroka, stolb);
+    else return 0;
+}
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    int stroka, stl, stolb;
+
+    cout << " введите кол-во ограничений:";
+    cin >> stroka;
+    stroka++;
+
+    cout << " введите кол-во переменных:";
+    cin >> stolb;
+
+    stolb += 4;//кол-во столбцов с б,сб, А0
+    stl = stolb - 1;//фиксируем кол-во столбов без А0
+
+    vector<vector<float>> tab(stroka+1, vector<float>(stolb));// хранит все элементы задачи и заполняется нулями
+
+    Add add;//присваеваем новой переменной класс Add
+  
+    add.add(tab, stroka, stolb);
+
+    //вывод введенных значений
+    cout << "введенные значения:" << endl << "F(X)= ";
+    for (int j = 3; j < stolb - 1; j++)
+        cout << tab[0][j] << "  ";
+
+    cout << endl;
+
+    for (int i = 1; i < stroka; i++) {
+        cout << "      ";
+        for (int j = 3; j < stolb; j++) {
+            if (j == stolb - 1)
+                cout << "= " << tab[i][2];
+            if (j != stolb - 1)
+                cout << tab[i][j] << "  ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+
+    stolb--;
+    FindBazzis(tab, stroka, stolb);
+    //вывод
+    bool n = 0;
+    add.show(tab, stroka, stolb, n);
+
+    simplex(tab, stroka, stolb);
+
+    //вывод
+    cout << "Оптимальный план:" << endl;
+    n = 0;
+    add.show(tab, stroka, stolb, n);
+
+    vector<float> x(stolb, 0);
+
+    for (int i = 1; i < stroka; i++) {
+        for (int j = 2; j < stolb; j++) {
+            if (tab[i][0] == j)
+                x[j] = tab[i][2];
+        }
+    }
+    //допустимое множество 
+    cout << endl << "X*( ";
+    for (int j = 3; j < stolb; j++) {
+        if (j == 3)
+            cout << x[j] << " ,";
+        else if (j == stolb - 1)
+            cout << " " << x[j];
+        else
+            cout << " " << x[j] << " ,";
+    }
+    float l = tab[stroka][2];//допустимое решение задачи
+
+    cout << " )" << endl << "L*=" << l << endl << endl;
+    system("pause");
+
+    return 0;
+}
